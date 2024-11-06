@@ -27,9 +27,38 @@ type JSONLog struct {
 	LogLevel                  int
 	IsEnclosedIntoTransaction bool
 	Transaction               *log.Transaction
+	MessageLogLevelOfLog      int
+}
+
+func (l *JSONLog) Debug(message string, attributes log.Attributes) {
+	l.log(message, attributes, log.L_DEBUG)
+}
+
+func (l *JSONLog) Info(message string, attributes log.Attributes) {
+	l.log(message, attributes, log.L_INFO)
+}
+
+func (l *JSONLog) Warning(message string, attributes log.Attributes) {
+	l.log(message, attributes, log.L_WARN)
+}
+
+func (l *JSONLog) Error(message string, attributes log.Attributes) {
+	l.log(message, attributes, log.L_ERR)
 }
 
 func (l *JSONLog) Log(message string, attributes log.Attributes) {
+	l.log(message, attributes, l.MessageLogLevelOfLog)
+}
+
+func (l *JSONLog) SetMessageLogLevelOfLog(lvl int) {
+	l.MessageLogLevelOfLog = lvl
+}
+
+func (l *JSONLog) log(message string, attributes log.Attributes, messageSevirity int) {
+	if messageSevirity < l.LogLevel {
+		return
+	}
+
 	// @todo make concurency safe
 	record := &JSONLogRecord{}
 	record.Message = message

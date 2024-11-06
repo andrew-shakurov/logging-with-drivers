@@ -24,14 +24,16 @@ type DefaultLog struct {
 	LogLevel                  int
 	IsEnclosedIntoTransaction bool
 	Transaction               *Transaction
+	MessageLogLevelOfLog      int
 	out                       io.Writer
 }
 
-func (l *DefaultLog) Log(message string, attributes Attributes) {
-	if l.LogLevel > L_INFO {
+func (l *DefaultLog) log(message string, attributes Attributes, messageSevirity int) {
+	if messageSevirity < l.LogLevel {
 		return
 	}
 
+	// @todo not concurrency safe
 	rec := DefaultLogRecord{
 		Time:    l.Now().Format(l.TimeFormat),
 		Message: message,
@@ -46,9 +48,31 @@ func (l *DefaultLog) Log(message string, attributes Attributes) {
 	rec.LogLevel = l.getLogLevelAsString(L_INFO)
 	rec.Attributes = getAttributesAsString(attributes)
 
-	// @todo not concurrency safe
-	// @todo add conditional logic to skip log messages based on the selected log level
 	fmt.Fprintf(l.out, l.Format, rec.LogLevel, trans, rec.Time, rec.Message, rec.Attributes)
+}
+
+func (l *DefaultLog) Debug(message string, attributes Attributes) {
+	l.log(message, attributes, L_DEBUG)
+}
+
+func (l *DefaultLog) Info(message string, attributes Attributes) {
+	l.log(message, attributes, L_INFO)
+}
+
+func (l *DefaultLog) Warning(message string, attributes Attributes) {
+	l.log(message, attributes, L_WARN)
+}
+
+func (l *DefaultLog) Error(message string, attributes Attributes) {
+	l.log(message, attributes, L_ERR)
+}
+
+func (l *DefaultLog) Log(message string, attributes Attributes) {
+	l.log(message, attributes, l.MessageLogLevelOfLog)
+}
+
+func (l *DefaultLog) SetMessageLogLevelOfLog(lvl int) {
+	l.MessageLogLevelOfLog = lvl
 }
 
 func (l *DefaultLog) SetLogLevel(lvl int) {
@@ -92,10 +116,11 @@ func getAttributesAsString(attrs Attributes) string {
 
 func NewDefaultLog() DefaultLog {
 	return DefaultLog{
-		Now:        time.Now,
-		Format:     "[%s] %s %s %s %s \n",
-		TimeFormat: "2006-01-02T15:04:05Z07:00",
-		LogLevel:   L_INFO,
+		Now:                  time.Now,
+		Format:               "[%s] %s %s %s %s \n",
+		TimeFormat:           "2006-01-02T15:04:05Z07:00",
+		LogLevel:             L_INFO,
+		MessageLogLevelOfLog: L_INFO,
 	}
 }
 

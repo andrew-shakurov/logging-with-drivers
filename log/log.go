@@ -23,8 +23,15 @@ type Transaction struct {
 }
 
 type Log interface {
-	Log(message string, attributes Attributes)
+	Debug(message string, attributes Attributes)
+	Info(message string, attributes Attributes)
+	Warning(message string, attributes Attributes)
+	Error(message string, attributes Attributes)
+
 	SetLogLevel(int)
 	SetTransaction(*Transaction)
 	ResetTransaction()
+
+	Log(message string, attributes Attributes)
+	SetMessageLogLevelOfLog(int)
 }

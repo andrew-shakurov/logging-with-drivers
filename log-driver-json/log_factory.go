@@ -32,8 +32,9 @@ func (d *JSONLogDriver) NewLog() log.Log {
 	out, _ := os.OpenFile(d.config.OutputFile, os.O_RDWR|os.O_CREATE, 0644)
 
 	defaultLog := JSONLog{
-		config: copyOfConfig,
-		out:    out,
+		MessageLogLevelOfLog: log.L_INFO,
+		config:               copyOfConfig,
+		out:                  out,
 	}
 
 	return &defaultLog
