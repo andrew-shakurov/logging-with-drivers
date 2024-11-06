@@ -35,6 +35,9 @@ func (l *DefaultLog) Log(message string, attributes Attributes) {
 	trans := ""
 	if l.IsEnclosedIntoTransaction {
 		trans = l.Transaction.UUID.String()
+		if len(l.Transaction.Attributes) > 0 {
+			trans += " " + getAttributesAsString(l.Transaction.Attributes)
+		}
 	}
 	rec.LogLevel = l.getLogLevelAsString(L_INFO)
 	rec.Attributes = getAttributesAsString(attributes)

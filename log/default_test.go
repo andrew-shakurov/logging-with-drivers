@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,6 +52,35 @@ func TestLog(t *testing.T) {
 		abc := buff.String()
 		print(abc)
 		expected := "[INFO]  0001-01-01T00:00:00Z  userId: 123, httpMethod: GET \n"
+		assert.Equal(t, expected, buff.String())
+	})
+
+	t.Run("transaction is printed, when enabled", func(t *testing.T) {
+		log, buff := getLogStreamingToBuff()
+		transUUIDString := "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+		trans := &Transaction{
+			UUID: uuid.Must(uuid.Parse(transUUIDString)),
+		}
+		log.SetTransaction(trans)
+
+		log.Log("", nil)
+
+		expected := "[INFO] 6ba7b810-9dad-11d1-80b4-00c04fd430c8 0001-01-01T00:00:00Z   \n"
+		assert.Equal(t, expected, buff.String())
+	})
+
+	t.Run("transaction and its attributes are printed when ts is enabled and attrs are specified", func(t *testing.T) {
+		log, buff := getLogStreamingToBuff()
+		transUUIDString := "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+		trans := &Transaction{
+			UUID:       uuid.Must(uuid.Parse(transUUIDString)),
+			Attributes: map[string]interface{}{"abc": 123},
+		}
+		log.SetTransaction(trans)
+
+		log.Log("", nil)
+
+		expected := "[INFO] 6ba7b810-9dad-11d1-80b4-00c04fd430c8 abc: 123 0001-01-01T00:00:00Z   \n"
 		assert.Equal(t, expected, buff.String())
 	})
 }
