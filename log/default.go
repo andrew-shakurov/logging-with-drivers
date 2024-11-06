@@ -3,16 +3,17 @@ package log
 import (
 	"fmt"
 	"io"
+	"strings"
 	"time"
 )
 
 var DriverKey = "cli"
 
 type DefaultLogRecord struct {
-	LogLevel    int
+	LogLevel    string
 	Time        string
 	Message     string
-	Attributes  Attributes
+	Attributes  string
 	Transaction string
 }
 
@@ -28,17 +29,19 @@ type DefaultLog struct {
 
 func (l *DefaultLog) Log(message string, attributes Attributes) {
 	rec := DefaultLogRecord{
-		LogLevel: L_INFO,
-		Time:     l.Now().Format(l.TimeFormat),
-		Message:  message,
+		Time:    l.Now().Format(l.TimeFormat),
+		Message: message,
 	}
 	trans := ""
 	if l.IsEnclosedIntoTransaction {
 		trans = l.Transaction.UUID.String()
 	}
+	rec.LogLevel = l.getLogLevelAsString(L_INFO)
+	rec.Attributes = getAttributesAsString(attributes)
+
 	// @todo not concurrency safe
 	// @todo add conditional logic to skip log messages based on the selected log level
-	fmt.Fprintf(l.out, l.Format, l.getLogLevelAsString(rec.LogLevel), trans, rec.Time, rec.Message, getAttributesAsString(rec.Attributes))
+	fmt.Fprintf(l.out, l.Format, rec.LogLevel, trans, rec.Time, rec.Message, rec.Attributes)
 }
 
 func (l *DefaultLog) SetLogLevel(lvl int) {
@@ -67,12 +70,17 @@ func (l *DefaultLog) getLogLevelAsString(lvl int) string {
 }
 
 func getAttributesAsString(attrs Attributes) string {
-	strAttributes := ""
-	for _, attr := range attrs {
-		strAttributes += " " + attr.String()
+	strAttributes := []string{}
+	for key, attr := range attrs {
+		stringer, ok := attr.(Stringer)
+		if ok {
+			strAttributes = append(strAttributes, fmt.Sprintf("%s: %s", key, stringer.String()))
+			continue
+		}
+		strAttributes = append(strAttributes, fmt.Sprintf("%s: %v", key, attr))
 	}
 
-	return strAttributes
+	return strings.Join(strAttributes, ", ")
 }
 
 func NewDefaultLog() DefaultLog {

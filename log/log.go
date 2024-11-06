@@ -15,7 +15,7 @@ type Stringer interface {
 	String() string
 }
 
-type Attributes map[string]Stringer
+type Attributes map[string]interface{}
 
 type Transaction struct {
 	UUID       uuid.UUID
