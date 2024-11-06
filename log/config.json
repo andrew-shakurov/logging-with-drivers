@@ -1,0 +1,4 @@
+{
+    "driver": "json",
+    "outputFile": "log.json"
+}
