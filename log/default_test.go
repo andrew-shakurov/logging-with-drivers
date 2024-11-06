@@ -16,8 +16,6 @@ func TestLog(t *testing.T) {
 		message := "abc"
 		log.Log(message, nil)
 
-		abc := buff.String()
-		print(abc)
 		expected := "[INFO]  0001-01-01T00:00:00Z abc  \n"
 		assert.Equal(t, expected, buff.String())
 	})
@@ -30,8 +28,6 @@ func TestLog(t *testing.T) {
 
 		log.Log("", map[string]interface{}{attributeKey: attributeVal})
 
-		abc := buff.String()
-		print(abc)
 		expected := "[INFO]  0001-01-01T00:00:00Z  userId: 123 \n"
 		assert.Equal(t, expected, buff.String())
 	})
@@ -49,8 +45,6 @@ func TestLog(t *testing.T) {
 			anotherAttributeKey: anotherValue,
 		})
 
-		abc := buff.String()
-		print(abc)
 		expected := "[INFO]  0001-01-01T00:00:00Z  userId: 123, httpMethod: GET \n"
 		assert.Equal(t, expected, buff.String())
 	})
@@ -81,6 +75,17 @@ func TestLog(t *testing.T) {
 		log.Log("", nil)
 
 		expected := "[INFO] 6ba7b810-9dad-11d1-80b4-00c04fd430c8 abc: 123 0001-01-01T00:00:00Z   \n"
+		assert.Equal(t, expected, buff.String())
+	})
+
+	t.Run("an INFO log message is completely omited, when log level set to ERROR", func(t *testing.T) {
+		log, buff := getLogStreamingToBuff()
+		log.LogLevel = L_ERR
+
+		message := "abc"
+		log.Log(message, nil)
+
+		expected := ""
 		assert.Equal(t, expected, buff.String())
 	})
 }

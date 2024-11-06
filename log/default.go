@@ -28,6 +28,10 @@ type DefaultLog struct {
 }
 
 func (l *DefaultLog) Log(message string, attributes Attributes) {
+	if l.LogLevel > L_INFO {
+		return
+	}
+
 	rec := DefaultLogRecord{
 		Time:    l.Now().Format(l.TimeFormat),
 		Message: message,
