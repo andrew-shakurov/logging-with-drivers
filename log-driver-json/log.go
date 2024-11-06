@@ -2,6 +2,7 @@ package logdriverjson
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 
 	"example.com/log"
@@ -63,10 +64,18 @@ func (l *JSONLog) log(message string, attributes log.Attributes, messageSevirity
 	record := &JSONLogRecord{}
 	record.Message = message
 	for key, attr := range attributes {
-		record.Attributes = append(record.Attributes, JSONLogRecordAttribute{
-			Key:   key,
-			Value: attr.String(),
-		})
+		jsonAttr := JSONLogRecordAttribute{
+			Key: key,
+		}
+		stringer, ok := attr.(log.Stringer)
+		if ok {
+			jsonAttr.Value = stringer.String()
+			record.Attributes = append(record.Attributes, jsonAttr)
+			continue
+		}
+
+		jsonAttr.Value = fmt.Sprintf("%v", attr)
+		record.Attributes = append(record.Attributes, jsonAttr)
 	}
 	// no meaningful way to handle, supress posible error
 	encRecord, _ := json.Marshal(record)
