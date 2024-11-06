@@ -11,9 +11,13 @@ type LogDriver interface {
 	NewLog() Log
 }
 
+type LogFactoryConfig struct {
+	DriverKey string `json:"driver"`
+}
+
 type LogFactory struct {
 	drivers   []LogDriver
-	config    DefaultLogFactoryConfig
+	config    LogFactoryConfig
 	configRaw []byte
 }
 

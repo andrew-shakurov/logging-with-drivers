@@ -2,7 +2,7 @@ package log
 
 import (
 	"fmt"
-	"os"
+	"io"
 	"time"
 )
 
@@ -23,6 +23,7 @@ type DefaultLog struct {
 	LogLevel                  int
 	IsEnclosedIntoTransaction bool
 	Transaction               *Transaction
+	out                       io.Writer
 }
 
 func (l *DefaultLog) Log(message string, attributes Attributes) {
@@ -37,7 +38,7 @@ func (l *DefaultLog) Log(message string, attributes Attributes) {
 	}
 	// @todo not concurrency safe
 	// @todo add conditional logic to skip log messages based on the selected log level
-	fmt.Fprintf(os.Stdout, l.Format, l.getLogLevelAsString(rec.LogLevel), trans, rec.Time, rec.Message, getAttributesAsString(rec.Attributes))
+	fmt.Fprintf(l.out, l.Format, l.getLogLevelAsString(rec.LogLevel), trans, rec.Time, rec.Message, getAttributesAsString(rec.Attributes))
 }
 
 func (l *DefaultLog) SetLogLevel(lvl int) {
