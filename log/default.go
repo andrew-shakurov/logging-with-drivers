@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -26,6 +27,7 @@ type DefaultLog struct {
 	Transaction               *Transaction
 	MessageLogLevelOfLog      int
 	outCh                     chan string
+	messageAwaitingWG         *sync.WaitGroup
 }
 
 func (l *DefaultLog) log(message string, attributes Attributes, messageSevirity int) {
@@ -47,6 +49,7 @@ func (l *DefaultLog) log(message string, attributes Attributes, messageSevirity 
 	rec.LogLevel = l.getLogLevelAsString(L_INFO)
 	rec.Attributes = getAttributesAsString(attributes)
 
+	l.messageAwaitingWG.Add(1)
 	l.outCh <- fmt.Sprintf(l.Format, rec.LogLevel, trans, rec.Time, rec.Message, rec.Attributes)
 }
 
@@ -124,7 +127,8 @@ func NewDefaultLog() DefaultLog {
 }
 
 type DefaultLogDriver struct {
-	outCh chan string
+	outCh           chan string
+	MessageAwaiting *sync.WaitGroup
 }
 
 func (d *DefaultLogDriver) IsSelected(keyFromConfig string) bool {
@@ -138,19 +142,27 @@ func (d *DefaultLogDriver) Configure(rawConfig []byte) error {
 func (d *DefaultLogDriver) NewLog() Log {
 	defaultLog := NewDefaultLog()
 	defaultLog.outCh = d.outCh
+	defaultLog.messageAwaitingWG = d.MessageAwaiting
 	return &defaultLog
+}
+
+func (d *DefaultLogDriver) Close() {
+	d.MessageAwaiting.Wait()
 }
 
 func NewDefaultLogDriver() *DefaultLogDriver {
 	outCh := make(chan string)
+	messageAwaitingWG := &sync.WaitGroup{}
 
 	go func() {
 		for message := range outCh {
 			os.Stdout.Write([]byte(message))
+			messageAwaitingWG.Done()
 		}
 	}()
 
 	return &DefaultLogDriver{
-		outCh: outCh,
+		outCh:           outCh,
+		MessageAwaiting: messageAwaitingWG,
 	}
 }

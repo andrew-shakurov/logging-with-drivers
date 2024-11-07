@@ -8,11 +8,13 @@ import (
 )
 
 func main() {
-	err := log.GlobalLogFactory.ConfigureFromFile("config.json")
+	err := log.ConfigureFromFile("config.json")
 	if err != nil {
 		print(err.Error())
 		os.Exit(1)
 	}
-	logger := log.GlobalLogFactory.NewLog()
+	logger := log.NewLog()
+	defer log.Close()
+
 	logger.Log("Hello World!", nil)
 }

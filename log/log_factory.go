@@ -9,6 +9,7 @@ type LogDriver interface {
 	IsSelected(keyFromConfig string) bool
 	Configure(rawConfig []byte) error
 	NewLog() Log
+	Close()
 }
 
 type LogFactoryConfig struct {
@@ -57,7 +58,27 @@ func (f *LogFactory) getSelectedDriver() LogDriver {
 		}
 	}
 
-	return &DefaultLogDriver{}
+	return f.drivers[0]
 }
 
 var GlobalLogFactory = &LogFactory{}
+
+func NewLog() Log {
+	return GlobalLogFactory.NewLog()
+}
+
+func ConfigureFromFile(pathToConfigFile string) error {
+	return GlobalLogFactory.ConfigureFromFile(pathToConfigFile)
+}
+
+func AddDriver(name string, driver LogDriver) {
+	GlobalLogFactory.AddDriver(name, driver)
+}
+
+func Close() {
+	GlobalLogFactory.getSelectedDriver().Close()
+}
+
+func init() {
+	AddDriver(DriverKey, NewDefaultLogDriver())
+}

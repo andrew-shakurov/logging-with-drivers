@@ -26,6 +26,8 @@ func (d *JSONLogDriver) Configure(rawConfig []byte) error {
 	return nil
 }
 
+func (d *JSONLogDriver) Close() {}
+
 func (d *JSONLogDriver) NewLog() log.Log {
 	copyOfConfig := d.config
 
@@ -44,5 +46,5 @@ func (d *JSONLogDriver) NewLog() log.Log {
 }
 
 func init() {
-	log.GlobalLogFactory.AddDriver(DriverKey, &JSONLogDriver{})
+	log.AddDriver(DriverKey, &JSONLogDriver{})
 }
