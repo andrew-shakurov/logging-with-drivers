@@ -2,7 +2,6 @@ package log
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strings"
 	"time"
@@ -26,7 +25,7 @@ type DefaultLog struct {
 	IsEnclosedIntoTransaction bool
 	Transaction               *Transaction
 	MessageLogLevelOfLog      int
-	out                       io.Writer
+	outCh                     chan string
 }
 
 func (l *DefaultLog) log(message string, attributes Attributes, messageSevirity int) {
@@ -34,7 +33,6 @@ func (l *DefaultLog) log(message string, attributes Attributes, messageSevirity 
 		return
 	}
 
-	// @todo not concurrency safe
 	rec := DefaultLogRecord{
 		Time:    l.Now().Format(l.TimeFormat),
 		Message: message,
@@ -49,7 +47,7 @@ func (l *DefaultLog) log(message string, attributes Attributes, messageSevirity 
 	rec.LogLevel = l.getLogLevelAsString(L_INFO)
 	rec.Attributes = getAttributesAsString(attributes)
 
-	fmt.Fprintf(l.out, l.Format, rec.LogLevel, trans, rec.Time, rec.Message, rec.Attributes)
+	l.outCh <- fmt.Sprintf(l.Format, rec.LogLevel, trans, rec.Time, rec.Message, rec.Attributes)
 }
 
 func (l *DefaultLog) Debug(message string, attributes Attributes) {
@@ -125,7 +123,9 @@ func NewDefaultLog() DefaultLog {
 	}
 }
 
-type DefaultLogDriver struct{}
+type DefaultLogDriver struct {
+	outCh chan string
+}
 
 func (d *DefaultLogDriver) IsSelected(keyFromConfig string) bool {
 	return DriverKey == keyFromConfig || keyFromConfig == ""
@@ -137,6 +137,20 @@ func (d *DefaultLogDriver) Configure(rawConfig []byte) error {
 
 func (d *DefaultLogDriver) NewLog() Log {
 	defaultLog := NewDefaultLog()
-	defaultLog.out = os.Stdout
+	defaultLog.outCh = d.outCh
 	return &defaultLog
+}
+
+func NewDefaultLogDriver() *DefaultLogDriver {
+	outCh := make(chan string)
+
+	go func() {
+		for message := range outCh {
+			os.Stdout.Write([]byte(message))
+		}
+	}()
+
+	return &DefaultLogDriver{
+		outCh: outCh,
+	}
 }

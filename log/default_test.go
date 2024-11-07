@@ -2,6 +2,7 @@ package log
 
 import (
 	"bytes"
+	"sync"
 	"testing"
 	"time"
 
@@ -88,13 +89,47 @@ func TestLog(t *testing.T) {
 		expected := ""
 		assert.Equal(t, expected, buff.String())
 	})
+
+	t.Run("a few concurrently called Log() produce messages, printed sequentially", func(t *testing.T) {
+		log, buff := getLogStreamingToBuff()
+
+		var wg sync.WaitGroup
+		for i := 0; i < 10; i++ {
+			wg.Add(1)
+			go func() {
+				log.Log("abc", nil)
+				wg.Done()
+			}()
+		}
+
+		expected := `[INFO]  0001-01-01T00:00:00Z abc  
+[INFO]  0001-01-01T00:00:00Z abc  
+[INFO]  0001-01-01T00:00:00Z abc  
+[INFO]  0001-01-01T00:00:00Z abc  
+[INFO]  0001-01-01T00:00:00Z abc  
+[INFO]  0001-01-01T00:00:00Z abc  
+[INFO]  0001-01-01T00:00:00Z abc  
+[INFO]  0001-01-01T00:00:00Z abc  
+[INFO]  0001-01-01T00:00:00Z abc  
+`
+		wg.Wait()
+		assert.Equal(t, expected, buff.String())
+	})
 }
 
 func getLogStreamingToBuff() (*DefaultLog, *bytes.Buffer) {
-	timeNow := time.Time{}
+	someFixedPointInTime := time.Time{}
 	log := NewDefaultLog()
-	log.Now = func() time.Time { return timeNow }
+	log.Now = func() time.Time { return someFixedPointInTime }
+	outCh := make(chan string)
+	log.outCh = outCh
 	buff := &bytes.Buffer{}
-	log.out = buff
+
+	go func() {
+		for message := range outCh {
+			buff.Write([]byte(message))
+		}
+	}()
+
 	return &log, buff
 }
