@@ -5,6 +5,12 @@ The repository contains three go modules.
 * `example-application`: provides an example of usage of the log library and the additional json-file dirver
 
 ## Usage
+### Running App
+`cd example-application`    
+`go run .`  
+`cat log.json`
+
+### Selecting Logging Driver
 The `config.json` file in the `example-application` module can be used to switch between two logging drivers. In order to activate the `cli` driver set the `driver` field value to `cli`. Removing the `driver` field completly out of the config has the same result. To activate the `json-file` driver set the `driver` field value to `json-file`. The log messages are placed to the file specified in the `output` field of the config.
 
 The use cases of the log functionality can be found in the `default_test.go`.
@@ -18,3 +24,6 @@ The key entities are:
 * `logdriverjson.JSONLog` and `logdriverjson.JSONLogDriver` a partial implementation of the `json-file` logging driver. The driver lacks most of the log functionality. Its goal is to demonstrate how another logging driver can be implemented and enabled in an application.
 
 ![class diagram](./diagram.png)
+
+## Limitations
+Please note that the `json-file` driver is roughly implemented and lacks most of the logging functionality.
