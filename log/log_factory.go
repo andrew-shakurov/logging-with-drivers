@@ -5,29 +5,23 @@ import (
 	"os"
 )
 
-type LogDriver interface {
-	IsSelected(keyFromConfig string) bool
-	Configure(rawConfig []byte) error
-	NewLog() Log
-	Close()
-}
-
-type LogFactoryConfig struct {
+type logFactoryConfig struct {
 	DriverKey string `json:"driver"`
 }
 
-type LogFactory struct {
+type logFactory struct {
 	drivers   []LogDriver
-	config    LogFactoryConfig
+	config    logFactoryConfig
 	configRaw []byte
 }
 
-func (f *LogFactory) AddDriver(name string, driver LogDriver) {
+func (f *logFactory) addDriver(name string, driver LogDriver) {
 	// not concurrency safe
+	// @todo reconsider the driver selection approach
 	f.drivers = append(f.drivers, driver)
 }
 
-func (f *LogFactory) ConfigureFromFile(filePath string) error {
+func (f *logFactory) configureFromFile(filePath string) error {
 	var err error
 	f.configRaw, err = os.ReadFile(filePath)
 	if err != nil {
@@ -47,11 +41,11 @@ func (f *LogFactory) ConfigureFromFile(filePath string) error {
 	return nil
 }
 
-func (r *LogFactory) NewLog() Log {
+func (r *logFactory) newLog() Log {
 	return r.getSelectedDriver().NewLog()
 }
 
-func (f *LogFactory) getSelectedDriver() LogDriver {
+func (f *logFactory) getSelectedDriver() LogDriver {
 	for _, driver := range f.drivers {
 		if driver.IsSelected(f.config.DriverKey) {
 			return driver
@@ -61,24 +55,24 @@ func (f *LogFactory) getSelectedDriver() LogDriver {
 	return f.drivers[0]
 }
 
-var GlobalLogFactory = &LogFactory{}
+var logFactoryInstance = &logFactory{}
 
 func NewLog() Log {
-	return GlobalLogFactory.NewLog()
+	return logFactoryInstance.newLog()
 }
 
 func ConfigureFromFile(pathToConfigFile string) error {
-	return GlobalLogFactory.ConfigureFromFile(pathToConfigFile)
+	return logFactoryInstance.configureFromFile(pathToConfigFile)
 }
 
 func AddDriver(name string, driver LogDriver) {
-	GlobalLogFactory.AddDriver(name, driver)
+	logFactoryInstance.addDriver(name, driver)
 }
 
 func Close() {
-	GlobalLogFactory.getSelectedDriver().Close()
+	logFactoryInstance.getSelectedDriver().Close()
 }
 
 func init() {
-	AddDriver(DriverKey, NewDefaultLogDriver())
+	AddDriver(DriverKey, newDefaultLogDriver())
 }

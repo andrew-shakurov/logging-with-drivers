@@ -10,47 +10,47 @@ import (
 
 var DriverKey = "cli"
 
-type DefaultLogRecord struct {
-	LogLevel    string
-	Time        string
-	Message     string
-	Attributes  string
-	Transaction string
+type defaultLogRecord struct {
+	logLevel    string
+	time        string
+	message     string
+	attributes  string
+	transaction string
 }
 
 type DefaultLog struct {
-	Now                       func() time.Time
-	Format                    string
-	TimeFormat                string
-	LogLevel                  int
-	IsEnclosedIntoTransaction bool
-	Transaction               *Transaction
-	MessageLogLevelOfLog      int
+	now                       func() time.Time
+	format                    string
+	timeFormat                string
+	logLevel                  int
+	isEnclosedIntoTransaction bool
+	transaction               *Transaction
+	messageLogLevelOfLog      int
 	outCh                     chan string
 	messageAwaitingWG         *sync.WaitGroup
 }
 
 func (l *DefaultLog) log(message string, attributes Attributes, messageSevirity int) {
-	if messageSevirity < l.LogLevel {
+	if messageSevirity < l.logLevel {
 		return
 	}
 
-	rec := DefaultLogRecord{
-		Time:    l.Now().Format(l.TimeFormat),
-		Message: message,
+	rec := defaultLogRecord{
+		time:    l.now().Format(l.timeFormat),
+		message: message,
 	}
 	trans := ""
-	if l.IsEnclosedIntoTransaction {
-		trans = l.Transaction.UUID.String()
-		if len(l.Transaction.Attributes) > 0 {
-			trans += " " + getAttributesAsString(l.Transaction.Attributes)
+	if l.isEnclosedIntoTransaction {
+		trans = l.transaction.UUID.String()
+		if len(l.transaction.Attributes) > 0 {
+			trans += " " + getAttributesAsString(l.transaction.Attributes)
 		}
 	}
-	rec.LogLevel = l.getLogLevelAsString(L_INFO)
-	rec.Attributes = getAttributesAsString(attributes)
+	rec.logLevel = l.getLogLevelAsString(L_INFO)
+	rec.attributes = getAttributesAsString(attributes)
 
 	l.messageAwaitingWG.Add(1)
-	l.outCh <- fmt.Sprintf(l.Format, rec.LogLevel, trans, rec.Time, rec.Message, rec.Attributes)
+	l.outCh <- fmt.Sprintf(l.format, rec.logLevel, trans, rec.time, rec.message, rec.attributes)
 }
 
 func (l *DefaultLog) Debug(message string, attributes Attributes) {
@@ -70,26 +70,26 @@ func (l *DefaultLog) Error(message string, attributes Attributes) {
 }
 
 func (l *DefaultLog) Log(message string, attributes Attributes) {
-	l.log(message, attributes, l.MessageLogLevelOfLog)
+	l.log(message, attributes, l.messageLogLevelOfLog)
 }
 
 func (l *DefaultLog) SetMessageLogLevelOfLog(lvl int) {
-	l.MessageLogLevelOfLog = lvl
+	l.messageLogLevelOfLog = lvl
 }
 
 func (l *DefaultLog) SetLogLevel(lvl int) {
-	l.LogLevel = lvl
+	l.logLevel = lvl
 }
 
 func (l *DefaultLog) SetTransaction(trans *Transaction) {
 	// not concurrency safe
-	l.IsEnclosedIntoTransaction = true
-	l.Transaction = trans
+	l.isEnclosedIntoTransaction = true
+	l.transaction = trans
 }
 
 func (l *DefaultLog) ResetTransaction() {
 	// not concurrency safe
-	l.IsEnclosedIntoTransaction = false
+	l.isEnclosedIntoTransaction = false
 }
 
 func (l *DefaultLog) getLogLevelAsString(lvl int) string {
@@ -116,13 +116,13 @@ func getAttributesAsString(attrs Attributes) string {
 	return strings.Join(strAttributes, ", ")
 }
 
-func NewDefaultLog() DefaultLog {
+func newDefaultLog() DefaultLog {
 	return DefaultLog{
-		Now:                  time.Now,
-		Format:               "[%s] %s %s %s %s \n",
-		TimeFormat:           "2006-01-02T15:04:05Z07:00",
-		LogLevel:             L_INFO,
-		MessageLogLevelOfLog: L_INFO,
+		now:                  time.Now,
+		format:               "[%s] %s %s %s %s \n",
+		timeFormat:           "2006-01-02T15:04:05Z07:00",
+		logLevel:             L_INFO,
+		messageLogLevelOfLog: L_INFO,
 	}
 }
 
@@ -140,7 +140,7 @@ func (d *DefaultLogDriver) Configure(rawConfig []byte) error {
 }
 
 func (d *DefaultLogDriver) NewLog() Log {
-	defaultLog := NewDefaultLog()
+	defaultLog := newDefaultLog()
 	defaultLog.outCh = d.outCh
 	defaultLog.messageAwaitingWG = d.MessageAwaiting
 	return &defaultLog
@@ -150,7 +150,7 @@ func (d *DefaultLogDriver) Close() {
 	d.MessageAwaiting.Wait()
 }
 
-func NewDefaultLogDriver() *DefaultLogDriver {
+func newDefaultLogDriver() *DefaultLogDriver {
 	outCh := make(chan string)
 	messageAwaitingWG := &sync.WaitGroup{}
 

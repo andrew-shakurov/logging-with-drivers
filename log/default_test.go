@@ -91,7 +91,7 @@ func TestLog(t *testing.T) {
 
 	t.Run("an INFO log message is completely omited, when log level set to ERROR", func(t *testing.T) {
 		log, buff, messageAwaitingWg := getLogStreamingToBuff()
-		log.LogLevel = L_ERR
+		log.logLevel = L_ERR
 
 		message := "abc"
 		log.Log(message, nil)
@@ -133,8 +133,8 @@ func TestLog(t *testing.T) {
 
 func getLogStreamingToBuff() (*DefaultLog, *bytes.Buffer, *sync.WaitGroup) {
 	someFixedPointInTime := time.Time{}
-	log := NewDefaultLog()
-	log.Now = func() time.Time { return someFixedPointInTime }
+	log := newDefaultLog()
+	log.now = func() time.Time { return someFixedPointInTime }
 	outCh := make(chan string)
 	log.outCh = outCh
 	messageAwaitingWG := &sync.WaitGroup{}

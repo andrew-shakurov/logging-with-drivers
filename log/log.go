@@ -35,3 +35,10 @@ type Log interface {
 	Log(message string, attributes Attributes)
 	SetMessageLogLevelOfLog(int)
 }
+
+type LogDriver interface {
+	IsSelected(keyFromConfig string) bool
+	Configure(rawConfig []byte) error
+	NewLog() Log
+	Close()
+}
