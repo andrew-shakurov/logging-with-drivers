@@ -3,6 +3,7 @@ package logdriverjson
 import (
 	"encoding/json"
 	"os"
+	"time"
 
 	"example.com/log"
 )
@@ -29,12 +30,14 @@ func (d *JSONLogDriver) NewLog() log.Log {
 	copyOfConfig := d.config
 
 	// @todo re-think how to handle an error
-	out, _ := os.OpenFile(d.config.OutputFile, os.O_RDWR|os.O_CREATE, 0644)
+	out, _ := os.OpenFile(d.config.OutputFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 
 	defaultLog := JSONLog{
 		MessageLogLevelOfLog: log.L_INFO,
 		config:               copyOfConfig,
 		out:                  out,
+		Now:                  time.Now,
+		TimeFormat:           "2006-01-02T15:04:05Z07:00",
 	}
 
 	return &defaultLog

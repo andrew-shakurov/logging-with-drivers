@@ -3,6 +3,7 @@ package log
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"time"
 )
@@ -136,5 +137,6 @@ func (d *DefaultLogDriver) Configure(rawConfig []byte) error {
 
 func (d *DefaultLogDriver) NewLog() Log {
 	defaultLog := NewDefaultLog()
+	defaultLog.out = os.Stdout
 	return &defaultLog
 }

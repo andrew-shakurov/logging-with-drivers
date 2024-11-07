@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"time"
 
 	"example.com/log"
 )
@@ -12,7 +13,7 @@ const DriverKey = "json-file"
 
 type JSONLogRecord struct {
 	LogLvel    string                   `json:"sevirity"`
-	Time       int                      `json:"time"`
+	Time       string                   `json:"time"`
 	Message    string                   `json:"message"`
 	Attributes []JSONLogRecordAttribute `json:"attributes"`
 }
@@ -29,6 +30,8 @@ type JSONLog struct {
 	IsEnclosedIntoTransaction bool
 	Transaction               *log.Transaction
 	MessageLogLevelOfLog      int
+	Now                       func() time.Time
+	TimeFormat                string
 }
 
 func (l *JSONLog) Debug(message string, attributes log.Attributes) {
@@ -61,7 +64,10 @@ func (l *JSONLog) log(message string, attributes log.Attributes, messageSevirity
 	}
 
 	// @todo make concurency safe
-	record := &JSONLogRecord{}
+	record := &JSONLogRecord{
+		Time:    l.Now().Format(l.TimeFormat),
+		LogLvel: l.getLogLevelAsString(messageSevirity),
+	}
 	record.Message = message
 	for key, attr := range attributes {
 		jsonAttr := JSONLogRecordAttribute{
@@ -80,6 +86,17 @@ func (l *JSONLog) log(message string, attributes log.Attributes, messageSevirity
 	// no meaningful way to handle, supress posible error
 	encRecord, _ := json.Marshal(record)
 	l.out.Write(encRecord)
+	l.out.Write([]byte("\n"))
+}
+
+func (l *JSONLog) getLogLevelAsString(lvl int) string {
+	levels := []string{
+		"DEBUG",
+		"INFO",
+		"WARN",
+		"ERR",
+	}
+	return levels[lvl]
 }
 
 func (l *JSONLog) SetLogLevel(lvl int) {
